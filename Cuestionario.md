@@ -38,7 +38,7 @@ Se cumple la restricción stateless: cada petición lleva la información necesa
 
 **Respuesta:**
 
-
+La restricción opcional es código bajo demanda. Un ejemplo del mecanismo es Google Maps JavaScript API: el navegador descarga y ejecuta código que incorpora funciones de mapas. Esto ejemplifica la restricción, sin implicar que toda esa API sea REST.
 
 ---
 
@@ -47,20 +47,22 @@ Se cumple la restricción stateless: cada petición lleva la información necesa
 **a) Un JWT tiene tres partes separadas por puntos. Nómbrelas en orden e indique qué contiene cada una. (3 puntos)**
 
 **Respuesta:**
+Un JWT firmado en formato compacto tiene:
 
+Header: indica el algoritmo de firma y, habitualmente, el tipo de token. Payload: contiene las declaraciones o claims, como usuario, roles y fecha de expiración. Signature: permite verificar la integridad y autenticidad del token.
 
 
 **b) Un compañero afirma: «como el JWT va firmado, puedo guardar en el *payload* la contraseña del usuario sin riesgo». Explique por qué está equivocado, precisando la diferencia entre firmar y cifrar. (2 puntos)**
 
 **Respuesta:**
-
+ Firmar no significa cifrar. La firma permite detectar modificaciones, pero no oculta el contenido. El payload de un JWT firmado puede decodificarse sin conocer la clave; por eso no debe incluir contraseñas. Cifrar sí busca impedir que personas sin la clave puedan leer los datos.
 
 
 **c) El JWT es *stateless* por diseño, lo que genera un problema conocido: no se puede invalidar un token antes de que expire. Describa dos estrategias distintas para revocarlo y señale la desventaja de cada una. (3 puntos)**
 
 **Respuesta:**
 
-
+1 Lista de revocación: guardar el identificador jti en Redis hasta que expire y comprobarlo en cada petición. Su desventaja es añadir estado y una consulta adicional. 2 Rotación de la clave de firma: dejar de aceptar la clave anterior para invalidar los tokens firmados con ella. Su desventaja es que revoca también los tokens legítimos asociados a esa clave y exige coordinar todos los servidores.
 
 ---
 
@@ -82,7 +84,11 @@ Se cumple la restricción stateless: cada petición lleva la información necesa
 **b) El Servicio de Rentas Internas del Ecuador expone la autorización de comprobantes electrónicos mediante servicios SOAP. Explique dos razones técnicas por las que una institución de ese tipo mantiene SOAP en lugar de migrar a REST. (3 puntos)**
 
 **Respuesta:**
+ Dos razones técnicas posibles para mantener SOAP son:
 
+Contratos estrictos: WSDL y XSD permiten establecer operaciones, tipos y estructuras que facilitan validar mensajes e integrar sistemas desarrollados con distintas tecnologías. Compatibilidad con integraciones existentes: migrar obligaría a modificar y volver a probar numerosos clientes, con riesgo de interrumpir la emisión y autorización de comprobantes.
+
+Estas son justificaciones técnicas posibles, no una afirmación sobre las decisiones internas del SRI.
 
 
 ---
@@ -94,18 +100,24 @@ Se cumple la restricción stateless: cada petición lleva la información necesa
 **a) Describa el patrón *cache-aside* en sus cuatro pasos, desde que llega la petición hasta que se responde. (3 puntos)**
 
 **Respuesta:**
+El patrón sigue estos cuatro pasos:
 
+La aplicación recibe la petición y busca la clave en la caché. Si existe una entrada vigente, la devuelve sin consultar al proveedor. Si no existe, consulta el servicio externo. Guarda el resultado válido con su TTL y devuelve la respuesta.
 
 
 **b) Justifique técnicamente por qué el TTL de `openlibrary` es doce veces mayor que el de `libros`, y qué criterio general debe guiar la elección de un TTL. (3 puntos)**
 
 **Respuesta:**
+Hay un error numérico en el enunciado: 24 horas son 1.440 minutos; divididos entre 2 minutos dan 720, no 12.
 
+El TTL mayor de openlibrary se justifica porque los metadatos bibliográficos suelen cambiar poco y su consulta implica una llamada externa. La caché de libros necesita actualizarse con mayor frecuencia para reflejar cambios locales. El TTL debe elegirse según la frecuencia de modificación, la tolerancia a datos desactualizados y el coste de consultar la fuente.
 
 
 **c) Explique por qué nunca debe almacenarse en caché la respuesta de un fallo del servicio externo, y describa qué le ocurriría al sistema si se hiciera. (2 puntos)**
 
 **Respuesta:**
+ En este proyecto no deben cachearse fallos porque se conservaría un problema transitorio como si fuera una respuesta válida. Aunque el proveedor se recuperara, la aplicación seguiría devolviendo el fallo hasta que expirara la entrada, pudiendo prolongar el problema durante 24 horas.
+
 
 
 
@@ -130,6 +142,8 @@ Para cada escenario indique el código HTTP correcto y explique en una línea po
 
 **Respuesta:**
 
+ En este proyecto no deben cachearse fallos porque se conservaría un problema transitorio como si fuera una respuesta válida. Aunque el proveedor se recuperara, la aplicación seguiría devolviendo el fallo hasta que expirara la entrada, pudiendo prolongar el problema durante 24 horas.
+
 
 
 ---
@@ -138,6 +152,6 @@ Para cada escenario indique el código HTTP correcto y explique en una línea po
 
 Marque con una `x` y complete:
 
-- [ ] Declaro que estas respuestas son de mi autoría, redactadas durante la sesión de examen, sin asistencia de inteligencia artificial ni comunicación con terceros.
+- [x] Declaro que estas respuestas son de mi autoría, redactadas durante la sesión de examen, sin asistencia de inteligencia artificial ni comunicación con terceros.
 
-Firma (nombre completo): ______________________________
+Firma (nombre completo):UmagingaArevalo Jefferson Manuel 
