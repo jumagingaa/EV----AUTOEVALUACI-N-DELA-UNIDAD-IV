@@ -1,36 +1,18 @@
 package ec.edu.uteq.appweb.biblioteca.config;
 
+import ec.edu.uteq.appweb.biblioteca.security.JwtAuthenticationFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * ============================================================================
- * TODO-U4-2: CADENA DE SEGURIDAD
- * ============================================================================
- *
- * Tal como esta, la aplicacion arranca con TODO abierto para que usted pueda
- * probar los controladores antes de tener el JWT listo. Eso es deliberado y
- * temporal: no se entrega asi.
- *
- * Debe dejarla en este estado final:
- *   - csrf deshabilitado (la API es stateless y no usa formularios de sesion).
- *   - SessionCreationPolicy.STATELESS.
- *   - Publicos: POST /api/v1/auth/login, /swagger-ui/**, /v3/api-docs/**,
- *     /api/docs, /actuator/health.
- *   - El resto de /api/v1/** exige autenticacion.
- *   - Registrar JwtAuthenticationFilter antes de UsernamePasswordAuthenticationFilter.
- *   - Devolver 401 cuando no hay autenticacion y 403 cuando el rol no alcanza,
- *     ambos en formato ProblemDetail.
- *
- * La autorizacion fina por rol se declara con @PreAuthorize en los controladores,
- * habilitada por @EnableMethodSecurity, que ya esta puesto.
- */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -41,12 +23,95 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // TODO-U4-2: sustituir esta configuracion permisiva por la definitiva.
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            JwtAuthenticationFilter filtroJwt) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(peticiones -> peticiones.anyRequest().permitAll());
+
+                .sessionManagement(sesion -> sesion
+                        .sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS))
+
+                .formLogin(formulario -> formulario.disable())
+                .httpBasic(basica -> basica.disable())
+                .logout(salida -> salida.disable())
+                .requestCache(cache -> cache.disable())
+
+                .authorizeHttpRequests(peticiones -> peticiones
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/auth/login")
+                        .permitAll()
+
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/api/docs",
+                                "/actuator/health",
+                                "/actuator/health/**")
+                        .permitAll()
+
+                        .requestMatchers("/api/v1/**")
+                        .authenticated()
+
+                        .anyRequest()
+                        .denyAll())
+
+                .exceptionHandling(errores -> errores
+                        .authenticationEntryPoint(
+                                (peticion, respuesta, excepcion) -> {
+                                    respuesta.setStatus(401);
+                                    respuesta.setCharacterEncoding("UTF-8");
+                                    respuesta.setContentType(
+                                            "application/problem+json");
+                                    respuesta.setHeader(
+                                            "WWW-Authenticate", "Bearer");
+
+                                    respuesta.getWriter().write("""
+                                            {
+                                              "type": "about:blank",
+                                              "title": "No autenticado",
+                                              "status": 401,
+                                              "detail": "Debe enviar un token JWT valido."
+                                            }
+                                            """);
+                                })
+
+                        .accessDeniedHandler(
+                                (peticion, respuesta, excepcion) -> {
+                                    respuesta.setStatus(403);
+                                    respuesta.setCharacterEncoding("UTF-8");
+                                    respuesta.setContentType(
+                                            "application/problem+json");
+
+                                    respuesta.getWriter().write("""
+                                            {
+                                              "type": "about:blank",
+                                              "title": "Acceso denegado",
+                                              "status": 403,
+                                              "detail": "No tiene permisos para realizar esta operacion."
+                                            }
+                                            """);
+                                }))
+
+                .addFilterBefore(
+                        filtroJwt,
+                        UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter>
+            registroFiltroJwt(JwtAuthenticationFilter filtroJwt) {
+
+        FilterRegistrationBean<JwtAuthenticationFilter> registro =
+                new FilterRegistrationBean<>(filtroJwt);
+
+        registro.setEnabled(false);
+        return registro;
     }
 }
