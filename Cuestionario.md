@@ -12,11 +12,11 @@
 
 | Campo | Valor |
 |---|---|
-| Apellidos y nombres | |
-| Número de carnet | |
-| Correo institucional | |
-| Fecha | |
-| URL del repositorio | |
+| Apellidos y nombres |Jefferson Manuel Umaginga Arevalo  |
+| Número de carnet |1206984005|
+| Correo institucional |jumagingaa@uteq.edu.ec
+| Fecha |28/08/2026
+| URL del repositorio |https://github.com/jumagingaa/EV----AUTOEVALUACI-N-DELA-UNIDAD-IV.git |
 
 ---
 
@@ -25,13 +25,13 @@
 **a) Enuncie las seis restricciones del estilo arquitectónico REST según Fielding. (3 puntos)**
 
 **Respuesta:**
-
+cliente-servidor, ausencia de estado de sesión (stateless), caché, interfaz uniforme, sistema en capas y código bajo demanda.
 
 
 **b) El proyecto base expone `GET /api/v1/autores` y guarda el estado de la sesión del usuario solo en el JWT que el cliente envía en cada petición. Explique qué restricción concreta se está cumpliendo con esa decisión y qué consecuencia práctica tiene para escalar el sistema a varios servidores detrás de un balanceador. (3 puntos)**
 
 **Respuesta:**
-
+Se cumple la restricción stateless: cada petición lleva la información necesaria para autenticar al usuario mediante su JWT. Cualquier servidor que pueda validar ese token puede atenderla, sin depender de una sesión guardada en otro servidor. Esto facilita distribuir las solicitudes mediante un balanceador
 
 
 **c) De las seis restricciones, indique cuál es opcional y dé un ejemplo real de una API que la use. (2 puntos)**
